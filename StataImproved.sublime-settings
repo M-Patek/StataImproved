@@ -1,0 +1,28 @@
+{
+	// macOS: which Stata receives the code. "auto" uses the newest installed
+	// version; a number such as 18 pins that version (com.stata.stata18).
+	"stata_version": "auto",
+
+	// Folder for the temporary do-files that are sent to Stata.
+	// Empty: a "StataImproved" folder inside the system temp directory.
+	// Windows: with a minimized Stata, a path with non-ASCII characters (e.g. a
+	// Chinese user name) needs Stata 14 or later; an ASCII-only folder avoids that.
+	"temp_directory": "",
+
+	// Windows: how code reaches Stata.
+	// "window": typed into Stata's Command window (no setup; if no Stata is
+	//           running, one is started). Recommended.
+	// "automation": Stata Automation (COM); needs "Register Stata Automation"
+	//           once. Caution: Stata then exits when Sublime Text lets go of
+	//           it (e.g. some minutes after Sublime Text exits), without
+	//           asking to save data.
+	"windows_method": "window",
+
+	// Windows: Stata executable to start when none is running (and for
+	// "Register Stata Automation"). Empty: the newest one found in
+	// "C:\Program Files\Stata*" and similar folders.
+	"stata_path": "",
+
+	// Windows, "automation" only: COM ProgID of Stata Automation.
+	"windows_progid": "stata.StataOLEApp"
+}
