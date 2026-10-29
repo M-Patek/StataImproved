@@ -7,16 +7,23 @@ or, optionally, via Stata Automation).
 Command names (stata_local, lines_to_stata, piu_sign, ...) are part of the
 public interface: key bindings, menus and users' own keymaps refer to them.
 """
+import os
 import time
 
 import sublime
 import sublime_plugin
 
-from .stata_improved import execution, text
+from .stata_improved import custom_commands, execution, text
 
 
 def plugin_loaded():
 	execution.remove_legacy_files()
+	names = execution.settings().get("custom_commands") or []
+	if names:
+		try:
+			custom_commands.apply(names)
+		except (OSError, ValueError) as e:
+			print("Stata Improved Editor: could not update the syntax highlighting: %s" % e)
 
 
 def plugin_unloaded():
@@ -31,6 +38,12 @@ def _selected_or_word_regions(view):
 		if view.substr(region).strip():
 			regions.append(region)
 	return regions
+
+
+def _file_directory(view):
+	"""Folder of the file in `view`, None for an unsaved buffer."""
+	name = view.file_name()
+	return os.path.dirname(name) if name else None
 
 
 def _replace_each(view, edit, regions, transform):
@@ -64,8 +77,9 @@ class lines_to_stataCommand(sublime_plugin.TextCommand):
 
 	def run(self, edit):
 		regions = []
+		whole_lines = execution.settings().get("send_whole_lines", False)
 		for sel in self.view.sel():
-			region = self.view.line(sel) if sel.empty() else sel
+			region = self.view.line(sel) if sel.empty() or whole_lines else sel
 			# Two carets on one line must not send that line twice.
 			if region not in regions:
 				regions.append(region)
@@ -73,7 +87,8 @@ class lines_to_stataCommand(sublime_plugin.TextCommand):
 		if not "".join(chunks).strip():
 			sublime.status_message("Stata Improved Editor: nothing to send")
 			return
-		execution.execute(text.as_code(chunks), kind="selection", mode=self.mode)
+		execution.execute(text.as_code(chunks), kind="selection", mode=self.mode,
+			cwd=_file_directory(self.view))
 
 
 class LinesStataRun(lines_to_stataCommand):
@@ -92,7 +107,7 @@ class PiuSign(sublime_plugin.TextCommand):
 		if not markers:
 			code = view.substr(sublime.Region(0, view.size()))
 			if code.strip():
-				execution.execute(text.as_code([code]), kind="file")
+				execution.execute(text.as_code([code]), kind="file", cwd=_file_directory(view))
 			return
 		blocks = sorted(set(text.block_bounds(markers, sel.begin(), view.size()) for sel in view.sel()))
 		chunks = [view.substr(sublime.Region(begin, end)) for begin, end in blocks]
@@ -103,7 +118,7 @@ class PiuSign(sublime_plugin.TextCommand):
 		if not "".join(chunks).strip():
 			sublime.status_message("Stata Improved Editor: this block is empty")
 			return
-		execution.execute(text.as_code(chunks), kind="block")
+		execution.execute(text.as_code(chunks), kind="block", cwd=_file_directory(view))
 
 
 class _WordToStata(object):
@@ -134,6 +149,28 @@ class InsertDatetimeCommand(sublime_plugin.TextCommand):
 	def run(self, edit):
 		for s in self.view.sel():
 			self.view.replace(edit, s, time.ctime())
+
+
+class StataCustomCommands(sublime_plugin.WindowCommand):
+	"""Ask for extra commands to highlight, remember them in the settings."""
+
+	def run(self):
+		current = " ".join(execution.settings().get("custom_commands") or [])
+		self.window.show_input_panel("Commands to highlight (separated by spaces):", current,
+			self.done, None, None)
+
+	def done(self, value):
+		names = text.valid_command_names(value.split())
+		settings = execution.settings()
+		settings.set("custom_commands", names)
+		sublime.save_settings(execution.SETTINGS_FILE)
+		try:
+			custom_commands.apply(names)
+		except (OSError, ValueError) as e:
+			execution.report_error("Could not update the syntax highlighting:\n%s" % e)
+			return
+		sublime.status_message("Stata Improved Editor: highlighting %d extra command(s); "
+			"reopen the file if the colors do not change" % len(names))
 
 
 class StataRegisterAutomationCommand(sublime_plugin.WindowCommand):

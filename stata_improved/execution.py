@@ -107,13 +107,23 @@ class UnsupportedPlatform(Exception):
 	pass
 
 
-def execute(code, kind="selection", mode="do", activate=False):
-	"""Write `code` to a do-file and let Stata `do` (or `run`) it."""
+def execute(code, kind="selection", mode="do", activate=False, cwd=None):
+	"""Write `code` to a do-file and let Stata `do` (or `run`) it.
+
+	With the "cd_to_file_directory" setting, `cwd` (the folder of the file being
+	edited) becomes Stata's working directory first (issue #20). With
+	"local_macros_persist" the file is `include`d instead of `do`ne, so local
+	macros survive from one send to the next (issue #3).
+	"""
+	if cwd and settings().get("cd_to_file_directory", False):
+		code = "cd " + stata_path_argument(cwd) + "\n" + code
 	try:
 		path = write_do_file(code, kind)
 	except OSError as e:
 		report_error("Could not write the temporary do-file (see the \"temp_directory\" setting):\n%s" % e)
 		return
+	if settings().get("local_macros_persist", False):
+		mode = "include" if mode == "do" else "quietly include"
 	command = mode + " " + stata_path_argument(path)
 	try:
 		backend().send(command, activate=activate)

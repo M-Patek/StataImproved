@@ -51,6 +51,9 @@ Note that though the trial version of Sublime Text is untimed and unlimited, the
 ### Manual installation
 Open Sublime Text, click the Preferences-> Browse Packages-> Then you will reach the `Packages` folder (e.g. `~/Library/Application Support/Sublime Text/Packages` on macOS, `%APPDATA%\Sublime Text\Packages` on Windows). Download [this Stata plugin from here](https://github.com/zizhongyan/StataImproved/archive/master.zip), and unpack the zip fil into that folder, and rename it as "Stata Improved Editor". 
 
+### macOS setup
+Nothing to configure in Stata itself: install Stata (13 or later) and open it once. The first time you send code, macOS asks whether Sublime Text may control Stata (`System Settings > Privacy & Security > Automation`); allow it. Then open a `.do` file, select some lines (or none, for the current line) and press <kbd>CTRL</kbd>+<kbd>d</kbd>. If you have several Stata versions installed, pick one with `"stata_version"`.
+
 ### Windows setup
 Nothing to set up: the plugin types the code into Stata's Command window (Stata may be minimized or busy; it does not need the focus). If no Stata is running, the newest installed Stata is started. If Stata is installed in an unusual folder, set `"stata_path"` in `Preferences > Package Settings > Stata Improved Editor > Settings`.
 
@@ -73,12 +76,22 @@ All key bindings only apply in Stata files (`.do`, `.ado`).
 | Do the block around the cursor (or the whole file) | <kbd>CTRL</kbd>+<kbd>SHIFT</kbd>+<kbd>d</kbd> | <kbd>CTRL</kbd>+<kbd>SHIFT</kbd>+<kbd>d</kbd> |
 | Insert a break line | <kbd>CTRL</kbd>+<kbd>s</kbd> | <kbd>CTRL</kbd>+<kbd>k</kbd>, <kbd>CTRL</kbd>+<kbd>s</kbd> |
 | Help for the selected command | <kbd>F1</kbd> | <kbd>F1</kbd> |
-| Data Browser for the selected variables | <kbd>F2</kbd> | <kbd>F2</kbd> |
+| Data Browser for the selected variables | <kbd>F2</kbd> or <kbd>CTRL</kbd>+<kbd>ALT</kbd>+<kbd>b</kbd> | <kbd>F2</kbd> |
 | Toggle `/* */` (selection) or `//` (line) | <kbd>CMD</kbd>+<kbd>/</kbd> | <kbd>CTRL</kbd>+<kbd>/</kbd> |
-| Word under the cursor → `` `word' `` | <kbd>CMD</kbd>+<kbd>\`</kbd> | <kbd>ALT</kbd>+<kbd>\`</kbd> |
+| Word under the cursor → `` `word' `` | <kbd>CTRL</kbd>+<kbd>ALT</kbd>+<kbd>\`</kbd> (selected text: <kbd>\`</kbd>) | <kbd>ALT</kbd>+<kbd>\`</kbd> |
 | Insert date and time | <kbd>F5</kbd> | <kbd>F5</kbd> |
 
 On Windows, <kbd>CTRL</kbd>+<kbd>d</kbd>, <kbd>CTRL</kbd>+<kbd>r</kbd> and <kbd>CTRL</kbd>+<kbd>SHIFT</kbd>+<kbd>d</kbd> follow Stata's own Do-file Editor, so in Stata files they replace Sublime's *Quick Add Next*, *Goto Symbol* and *Duplicate Line*. Change them in `Preferences > Package Settings > Stata Improved Editor > Key Bindings`.
+
+On macOS, <kbd>CMD</kbd>+<kbd>\`</kbd> is left to the system (switch windows), and <kbd>F2</kbd> is also Sublime's *Next Bookmark*: to get that back in Stata files add `{ "keys": ["f2"], "command": "next_bookmark" }` to your own key bindings, or use <kbd>CTRL</kbd>+<kbd>ALT</kbd>+<kbd>b</kbd> for the Data Browser. To drop the `replace` template, delete `replace.sublime-snippet` or override its trigger.
+
+New optional settings: `cd_to_file_directory` (make the file's folder Stata's working directory), `send_whole_lines` (send whole lines even if only part is selected) and `local_macros_persist` (keep local macros between sends).
+
+Further tips:
+* **Multi-select** (e.g. every occurrence of a variable) is a Sublime Text feature: select the word and press <kbd>CMD</kbd>+<kbd>d</kbd> repeatedly (<kbd>CTRL</kbd>+<kbd>d</kbd> on Windows/Linux, which this package uses in Stata files, so use <kbd>ALT</kbd>+<kbd>F3</kbd> there to select all occurrences).
+* **Highlight more commands**: run `Stata Improved: Highlight Additional Commands` from the Command Palette and enter e.g. `esttab reghdfe` (kept in the `custom_commands` setting).
+* **Macros** have their own color scope (`variable.other.macro`) for both `` `local' `` and `$global`/`${global}`, so a color scheme can show them alike.
+* **Your own snippets**: save a `.sublime-snippet` file in `Packages/User` with `<scope>source.stata</scope>` and a `<tabTrigger>`, then type the trigger and press <kbd>Tab</kbd>. A snippet that appears in the completions list but does nothing usually has broken XML, e.g. a doubled closing tag such as `</scope>scope>`.
 
 ### 🎷Code Execution
 <kbd>CTRL</kbd>+<kbd>d</kbd> -- Execute (do) selected codes. 
@@ -195,7 +208,7 @@ This plugin basically creates a temporary do-file, which is then sent to the Sta
 
 
 ## 🎼 Update history 🎼 
-**v2.0.0**: **Sublime Text 4** and **Windows** support; key bindings scoped to Stata files; fixes #21, #27, #28 (and its duplicate #32), #30, #34, #37, #38, #39, and the single-character part of #25.
+**v2.0.0**: **Sublime Text 4** and **Windows** support; key bindings scoped to Stata files; fixes #3 (`local_macros_persist`), #9, #19, #20 (`cd_to_file_directory`), #21, #24, #25 (`send_whole_lines`), #27, #28 (and its duplicate #32), #29, #30, #34, #35, #37, #38, #39; docs for #14, #26, #31.
 
 **v1.3.19 (01/Jan/26)**: Full support for **Stata 19** and  **StataNow** is made.  
 

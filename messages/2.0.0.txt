@@ -15,6 +15,12 @@ Now for Sublime Text 4 on macOS and Windows.
 * "$" only wraps a selection; typing "$" alone inserts "$" again (#21, #25, #27).
 * Cmd+/ (Ctrl+/) without a selection comments the line with // (#28, #32).
 * macOS: pin the Stata version with "stata_version" in the settings (#34).
+* macOS: Cmd+` is left to the system; use Ctrl+Alt+` for `word'. Ctrl+Alt+B
+  opens the Data Browser (F2 clashes with Sublime's bookmarks) (#24, #29).
+* Macros `x' and $x / ${x} have their own color scope (#9).
+* New settings: "cd_to_file_directory" (#20), "send_whole_lines" (#25),
+  "local_macros_persist" (#3), "custom_commands" (#35, command palette:
+  "Stata Improved: Highlight Additional Commands").
 * Fixed: errors on one-letter words (#37) and unsaved files (#38);
   temporary do-files are created inside the temp directory, one per run (#39);
   the last block after the final break line can be executed.

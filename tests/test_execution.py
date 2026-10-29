@@ -61,6 +61,30 @@ class ExecutionTest(unittest.TestCase):
 			self.assertEqual(f.read(), "sum\n")
 		self.assertTrue(activate)
 
+	def _sent_text(self, **kw):
+		sent = []
+
+		class Backend(object):
+			def send(self, command, activate=False):
+				sent.append(command)
+		self.execution._backend = Backend()
+		self.execution.execute("sum\n", **kw)
+		command = sent[0]
+		path = command[command.index('"') + 1:-1]
+		with open(path) as f:
+			return command, f.read()
+
+	def test_cd_to_file_directory(self):  # issue #20
+		self.assertEqual(self._sent_text(cwd="/a b/c")[1], "sum\n")
+		self.sublime.settings["cd_to_file_directory"] = True
+		self.assertEqual(self._sent_text(cwd="/a b/c")[1], 'cd "/a b/c"\nsum\n')
+		self.assertEqual(self._sent_text()[1], "sum\n")
+
+	def test_local_macros_persist(self):  # issue #3
+		self.sublime.settings["local_macros_persist"] = True
+		self.assertTrue(self._sent_text()[0].startswith('include "'))
+		self.assertTrue(self._sent_text(mode="run")[0].startswith('quietly include "'))
+
 	def test_unwritable_temp_directory_is_reported(self):
 		blocker = os.path.join(self.tmp, "a file")
 		open(blocker, "w").close()

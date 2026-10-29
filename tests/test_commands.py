@@ -11,8 +11,11 @@ class CommandTest(unittest.TestCase):
 		self.plugin, self.sublime = load_plugin()
 		self.sent = []
 		execution = support("execution")
-		execution.execute = lambda code, kind="selection", mode="do", activate=False: \
+		execution.execute = lambda code, kind="selection", mode="do", activate=False, cwd=None: \
 			self.sent.append((code, kind, mode, activate))
+		self.cwds = []
+		execution.execute = lambda code, kind="selection", mode="do", activate=False, cwd=None: \
+			(self.sent.append((code, kind, mode, activate)), self.cwds.append(cwd))
 		self.plugin.execution = execution
 
 	def run_command(self, cls, text, file_name=None):
@@ -63,6 +66,19 @@ class CommandTest(unittest.TestCase):
 		self.run_command(self.plugin.lines_to_stataCommand, "sum pri|ce mp|g\nreg y x|")
 		self.assertEqual(self.sent[0][0], "sum price mpg\nreg y x\n")
 
+	def test_send_whole_lines_setting(self):  # issue #25
+		self.run_command(self.plugin.lines_to_stataCommand, "sum price\nreg pr[ice m]pg\nsum")
+		self.assertEqual(self.sent[0][0], "ice m\n")
+		self.sent = []
+		self.sublime.settings["send_whole_lines"] = True
+		self.run_command(self.plugin.lines_to_stataCommand, "sum price\nreg pr[ice m]pg\nsum")
+		self.assertEqual(self.sent[0][0], "reg price mpg\n")
+
+	def test_file_directory_is_passed(self):  # issue #20
+		self.run_command(self.plugin.PiuSign, "sum|", file_name="/a/b/x.do")
+		self.run_command(self.plugin.PiuSign, "sum|", file_name=None)
+		self.assertEqual(self.cwds, ["/a/b", None])
+
 	def test_empty_line_sends_nothing(self):
 		self.run_command(self.plugin.lines_to_stataCommand, "sum\n|\nreg")
 		self.assertEqual(self.sent, [])
@@ -103,7 +119,7 @@ class CommandTest(unittest.TestCase):
 	def test_command_names_are_unchanged(self):
 		# Key bindings and users' keymaps refer to these names.
 		for name in ("StataLocal", "StataMacro", "StataToggle", "PiuSign", "lines_to_stataCommand",
-				"StataHelpCommand", "StataBro", "InsertDatetimeCommand", "LinesStataRun"):
+				"StataHelpCommand", "StataBro", "InsertDatetimeCommand", "LinesStataRun", "StataCustomCommands"):
 			self.assertTrue(hasattr(self.plugin, name), name)
 		self.assertFalse(issubclass(self.plugin._WordToStata, self.plugin.sublime_plugin.TextCommand))
 
